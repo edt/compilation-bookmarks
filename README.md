@@ -5,7 +5,8 @@ A bookmark system for compilation commands.
 
 Add compilation-bookmarks to your load-path and add the following lines to your init.
 
-```(require 'compilation-bookmarks.mode)
+```
+(require 'compilation-bookmarks.mode)
 (compilation-bookmarks-mode)
 ```
 
