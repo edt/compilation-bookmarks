@@ -42,6 +42,26 @@
 
 (defvar compilation-bookmarks-require-recompilation nil)
 
+(defvar compilation-bookmarks-prefix-key "C-c c" "Prefix key for compilation bookmarks.")
+
+(define-prefix-command 'compilation-bookmarks-map)
+
+
+(defun compilation-bookmarks-set-keybindings ()
+  ""
+  (dolist (bm compilation-bookmarks)
+    (if (equal (cbm-get-key bm) nil)
+        (progn)
+      (progn
+        (define-key compilation-bookmarks-map (cbm-get-key bm) `(lambda ()
+                                                                  (interactive)
+                                                                  (compilation-bookmarks-compile ,(cbm-get-name bm))))))
+    )
+
+  (define-key compilation-bookmarks-map (kbd compilation-bookmarks-prefix-key) 'compilation-bookmarks-map)
+  )
+
+
 (defun cbm-get-name (cbm)
   ""
   (cdr (assoc 'name cbm)))
@@ -67,6 +87,12 @@
       ;; (add-to-list 'tmp-list (cdr (assoc 'name n))))
       (add-to-list 'tmp-list (cdr (assoc 'name cbm))))
     tmp-list))
+
+
+(defun compilation-bookmarks-get-names-interactive ()
+  ""
+  (let ((selection (completing-read "Select bookmark: " (compilation-bookmarks-get-names))))
+    selection))
 
 
 (defun compilation-bookmarks-get-bookmark (selected-name)
@@ -99,10 +125,12 @@
     (setq compilation-bookmarks (delete to-delete compilation-bookmarks))))
 
 
-(defun compilation-bookmarks-change-bookmark ()
+(defun compilation-bookmarks-change-bookmark (&optional name)
   "Change settings of bookmark"
   (interactive)
-  (let ((to-change (compilation-bookmarks-get-bookmark-interactive)))
+  (if (equal name nil)
+      (setq name (compilation-bookmarks-get-names-interactive)))
+  (let ((to-change (compilation-bookmarks-get-bookmark name)))
 
     (let ((new-dir (completing-read "New directory to use: " nil nil (cbm-get-directory to-change)))
           (new-cmd (completing-read "New command to use: " nil nil (cbm-get-command to-change)))
@@ -123,17 +151,19 @@
         (kill-buffer "*compilation*"))))
 
 
-(defun compilation-bookmarks-compilation-once ()
+(defun compilation-bookmarks-compilation-once (&optional name)
   "Use the compilation bookmark just once"
   (interactive)
-  (let ((bm (compilation-bookmarks-get-bookmark-interactive)))
+  (if (equal name nil)
+      (setq name (compilation-bookmarks-get-names-interactive)))
+  (let ((bm (compilation-bookmarks-get-bookmark name)))
     (let ((default-directory (cbm-get-directory bm))
           (compilation-read-command nil))
     (setq compilation-bookmarks-require-recompilation t)
     (compile (cbm-get-command bm)))))
 
 
-(defun compilation-bookmarks-compile ()
+(defun compilation-bookmarks-compile (&optional name)
   "Set compilation settings to the current compilation bookmark"
   (interactive)
   (compilation-bookmarks-delete-compilation-buffer)
@@ -145,8 +175,10 @@
           (compile (cbm-get-directory compilation-bookmarks-active-bookmark))))
     ;; new compilation -> ask for bookmark
     (progn
-      (let ((bookmark-selection (completing-read "Compilation bookmark to use: " (compilation-bookmarks-get-names))))
-        (setq compilation-bookmarks-active-bookmark (compilation-bookmarks-get-bookmark bookmark-selection))
+      (if (equal name nil)
+          (setq name (compilation-bookmarks-get-names-interactive)))
+      (let ((bookmark-selection (compilation-bookmarks-get-bookmark name)))
+        (setq compilation-bookmarks-active-bookmark bookmark-selection)
         (let ((default-directory (cbm-get-directory compilation-bookmarks-active-bookmark))
               (compilation-read-command t))
           (compile (cbm-get-command compilation-bookmarks-active-bookmark)))))))
@@ -178,14 +210,18 @@
   (if (file-exists-p compilation-bookmarks-save-file)
       (load compilation-bookmarks-save-file)))
 
+
 (define-minor-mode compilation-bookmarks-mode
   "Collection of compilation bookmarks"
   :global t
+  :keymap compilation-bookmarks-map
 
   (if compilation-bookmarks-mode
       (progn
         (compilation-bookmarks-load-bookmarks)
-        (add-hook 'kill-emacs-hook 'compilation-bookmarks-save-bookmarks))
+        (add-hook 'kill-emacs-hook 'compilation-bookmarks-save-bookmarks)
+        (compilation-bookmarks-set-keybindings))
+
     (progn
       (compilation-bookmarks-save-bookmarks)
       (setq compilation-bookmarks nil)
