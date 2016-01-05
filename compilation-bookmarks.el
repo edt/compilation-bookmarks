@@ -38,28 +38,93 @@
 
 (defvar compilation-bookmarks-active-bookmark nil "Currently used compilation bookmark")
 
-(defvar compilation-bookmarks-save-file "~/.emacs.d/compilation-bookmarks" "Location of saved compilation bookmarks")
+;; (defvar compilation-bookmarks-save-file "~/.emacs.d/compilation-bookmarks" "Location of saved compilation bookmarks")
+
+
+(defcustom compilation-bookmarks-save-file
+  (expand-file-name "compilation-bookmarks" user-emacs-directory)
+  "Location of saved compilation bookmarks"
+  :group 'compilation-bookmarks
+  :type 'string)
+
 
 (defvar compilation-bookmarks-require-recompilation nil)
 
-(defvar compilation-bookmarks-prefix-key "C-c c" "Prefix key for compilation bookmarks.")
 
-(define-prefix-command 'compilation-bookmarks-map)
+(defcustom compilation-bookmarks-prefix-key (kbd "C-c c")
+  "Compilation-Bookmarks keymap prefix"
+  :group 'compilation-bookmarks
+  :type 'string)
+
+
+(defvar compilation-bookmarks-command-compile-map
+  (let ((map (make-sparse-keymap)))
+    map)
+  "Submap for compilation commands")
+
+(fset 'compilation-bookmarks-command-compile-map compilation-bookmarks-command-compile-map)
+
+
+(defvar compilation-bookmarks-command-compile-once-map
+  (let ((map (make-sparse-keymap)))
+
+    map)
+  "Submap for compilation commands that shall run only once")
+
+(fset 'compilation-bookmarks-command-compile-once-map compilation-bookmarks-command-compile-once-map)
+
+
+(defvar compilation-bookmarks-command-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "a" 'compilation-bookmarks-add-bookmark)
+    (define-key map "r" 'compilation-bookmarks-remove-bookmark)
+    (define-key map "v" 'compilation-bookmarks-compile)
+    (define-key map "i" 'compilation-bookmarks-compile-once)
+    (define-key map "c" 'compilation-bookmarks-command-compile-map)
+    map)
+  "")
+
+(fset 'compilation-bookmarks-command-map compilation-bookmarks-command-map)
+
+(defvar compilation-bookmarks-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map compilation-bookmarks-prefix-key 'compilation-bookmarks-command-map)
+    map)
+  "Keymap for compilation-bookmarks-minor-mode")
+
+
+(defun compilation-bookmarks-add-compile-keybinding (bookmark)
+  "Add bookmark to compile submap"
+  (define-key compilation-bookmarks-command-compile-map (kbd (cbm-get-key bookmark)) `(lambda ()
+                                                                                  (interactive)
+                                                                                  (compilation-bookmarks-compile ,(cbm-get-name bookmark)))))
+
+
+(defun compilation-bookmarks-remove-compile-keybinding (bookmark)
+  "Remove bookmark from compile submap"
+  (define-key compilation-bookmarks-command-compile-map (kbd (cbm-get-key bookmark)) nil))
+
+
+(defun compilation-bookmarks-add-compile-once-keybinding (bookmark)
+  "Add bookmark to compile-once-submap"
+  (define-key compilation-bookmarks-command-compile-once-map (kbd (cbm-get-key bookmark)) `(lambda ()
+                                                                                             (interactive)
+                                                                                             (compilation-bookmarks-compile-once ,(cbm-get-name bookmark)))))
+
+
+(defun compilation-bookmarks-remove-compile-once-keybinding (bookmark)
+  "Remove bookmark from compile submap"
+  (define-key compilation-bookmarks-command-compile-once-map (kbd (cbm-get-key bookmark)) nil))
 
 
 (defun compilation-bookmarks-set-keybindings ()
-  ""
+  "Add keybindings for all compilation-bookmarks"
   (dolist (bm compilation-bookmarks)
     (if (equal (cbm-get-key bm) nil)
         (progn)
       (progn
-        (define-key compilation-bookmarks-map (cbm-get-key bm) `(lambda ()
-                                                                  (interactive)
-                                                                  (compilation-bookmarks-compile ,(cbm-get-name bm))))))
-    )
-
-  (define-key compilation-bookmarks-map (kbd compilation-bookmarks-prefix-key) 'compilation-bookmarks-map)
-  )
+        (compilation-bookarks-add-keybinding bm)
+        (compilation-bookmarks-add-compile-once-keybinding bm)))))
 
 
 (defun cbm-get-name (cbm)
@@ -84,13 +149,12 @@
   (interactive)
   (let (tmp-list '())
     (dolist (cbm compilation-bookmarks)
-      ;; (add-to-list 'tmp-list (cdr (assoc 'name n))))
       (add-to-list 'tmp-list (cdr (assoc 'name cbm))))
     tmp-list))
 
 
 (defun compilation-bookmarks-get-names-interactive ()
-  ""
+  "Let user select bookmark and return selected one"
   (let ((selection (completing-read "Select bookmark: " (compilation-bookmarks-get-names))))
     selection))
 
@@ -114,14 +178,23 @@
 (defun compilation-bookmarks-add-bookmark (_dir _command _name _key)
   "Add compilation bookmark"
   (interactive "DDirectory to use: \nMCommand to use: \nMName of your bookmark: \nSKey (empty if none): ")
-  (let ((new-compilation-bookmark `((name . ,_name) (command . ,_command) (directory . ,_dir) (key .,_key))))
-    (add-to-list 'compilation-bookmarks new-compilation-bookmark)))
+  (if (not (equal (compilation-bookmarks-get-bookmark _name) nil))
+      (error "Name already exists!"))
+  (if (equal _name nil)
+      (error "Name must not be empty!"))
+  (let ((new_key (prin1-to-string _key)))
+  (let ((new-compilation-bookmark `((name . ,_name) (command . ,_command) (directory . ,_dir) (key . ,new_key))))
+    (add-to-list 'compilation-bookmarks new-compilation-bookmark)
+    (compilation-bookmarks-add-compile-keybinding new-compilation-bookmark)
+    (compilation-bookmarks-add-compile-once-keybinding new-compilation-bookmark))))
 
 
 (defun compilation-bookmarks-remove-bookmark ()
   "Remove bookmark from collection"
   (interactive)
   (let ((to-delete (compilation-bookmarks-get-bookmark-interactive)))
+    (compilation-bookmarks-remove-compile-keybinding to-delete)
+    (compilation-bookmarks-remove-compile-once-keybinding to-delete)
     (setq compilation-bookmarks (delete to-delete compilation-bookmarks))))
 
 
@@ -140,7 +213,9 @@
       (setcdr (assq 'directory to-change) new-dir)
       (setcdr (assq 'command to-change) new-cmd)
       (setcdr (assq 'name to-change) new-name)
-      (setcdr (assq 'key to-change) new-key))))
+      (setcdr (assq 'key to-change) new-key)))
+  ;; TODO change binding
+  )
 
 
 (defun compilation-bookmarks-delete-compilation-buffer ()
@@ -197,15 +272,17 @@
 (require 'recentf)
 
 (defun compilation-bookmarks-save-bookmarks ()
-    (interactive)
-    (with-temp-buffer
-      (erase-buffer)
-      (set-buffer-file-coding-system 'emacs-mule)
-      (recentf-dump-variable 'compilation-bookmarks)
-      (write-file (expand-file-name compilation-bookmarks-save-file))))
+  "Stores compilation-bookmarks in `compilation-bookmarks-save-file`"
+  (interactive)
+  (with-temp-buffer
+    (erase-buffer)
+    (set-buffer-file-coding-system 'emacs-mule)
+    (recentf-dump-variable 'compilation-bookmarks)
+    (write-file (expand-file-name compilation-bookmarks-save-file))))
 
 
 (defun compilation-bookmarks-load-bookmarks ()
+  "Load compilation-bookmarks from `compilation-bookmarks-save-file`"
   (interactive)
   (if (file-exists-p compilation-bookmarks-save-file)
       (load compilation-bookmarks-save-file)))
