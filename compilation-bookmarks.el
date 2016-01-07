@@ -123,7 +123,7 @@
     (if (equal (cbm-get-key bm) nil)
         (progn)
       (progn
-        (compilation-bookarks-add-keybinding bm)
+        (compilation-bookmarks-add-compile-keybinding bm)
         (compilation-bookmarks-add-compile-once-keybinding bm)))))
 
 
