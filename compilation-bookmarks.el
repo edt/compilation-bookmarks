@@ -93,11 +93,24 @@
   "Keymap for compilation-bookmarks-minor-mode")
 
 
+(defun compilation-bookmarks-replace-space (str)
+  "Replace spaces with -"
+  (let (var1)
+    (setq var1 (replace-regexp-in-string "[\n\t ]+" "-" str))
+    var1))
+
+
 (defun compilation-bookmarks-add-compile-keybinding (bookmark)
   "Add bookmark to compile submap"
-  (define-key compilation-bookmarks-command-compile-map (kbd (cbm-get-key bookmark)) `(lambda ()
-                                                                                  (interactive)
-                                                                                  (compilation-bookmarks-compile ,(cbm-get-name bookmark)))))
+
+  ;; wrap lambda in an alias to make key descriptions like
+  ;; which-key-mode or C-c c c C-h (for compilation-bookmarks-compile-map)
+  (define-key compilation-bookmarks-command-compile-map (kbd (cbm-get-key bookmark))
+    (defalias (intern (concat "compile-" (compilation-bookmarks-replace-space (cbm-get-name bookmark))))
+      `(lambda ()
+         ,(format "Call `compile-bookmarks-compile` for %s" (cbm-get-name bookmark))
+         (interactive)
+         (compilation-bookmarks-compile ,(cbm-get-name bookmark))))))
 
 
 (defun compilation-bookmarks-remove-compile-keybinding (bookmark)
@@ -107,9 +120,15 @@
 
 (defun compilation-bookmarks-add-compile-once-keybinding (bookmark)
   "Add bookmark to compile-once-submap"
-  (define-key compilation-bookmarks-command-compile-once-map (kbd (cbm-get-key bookmark)) `(lambda ()
-                                                                                             (interactive)
-                                                                                             (compilation-bookmarks-compile-once ,(cbm-get-name bookmark)))))
+
+  ;; wrap lambda in an alias to make key descriptions like
+  ;; which-key-mode or C-c c c C-h (for compilation-bookmarks-compile-map)
+  (define-key compilation-bookmarks-command-compile-once-map (kbd (cbm-get-key bookmark))
+    (defalias (intern (concat "compile-once-" (compilation-bookmarks-replace-space (cbm-get-name bookmark))))
+    `(lambda ()
+       ,(format "Call `compile-bookmarks-compile-once` for %s" (cbm-get-name bookmark))
+       (interactive)
+       (compilation-bookmarks-compile-once ,(cbm-get-name bookmark))))))
 
 
 (defun compilation-bookmarks-remove-compile-once-keybinding (bookmark)
