@@ -232,9 +232,16 @@
       (setcdr (assq 'directory to-change) new-dir)
       (setcdr (assq 'command to-change) new-cmd)
       (setcdr (assq 'name to-change) new-name)
-      (setcdr (assq 'key to-change) new-key)))
-  ;; TODO change binding
-  )
+
+      (if (equal new-key (cbm-get-key to-change))
+          (progn)
+        (progn
+          (compilation-bookmarks-remove-compile-keybinding to-change)
+          (compilation-bookmarks-remove-compile-once-keybinding to-change)
+          (setcdr (assq 'key to-change) new-key)
+          (compilation-bookmarks-add-compile-keybinding to-change)
+          (compilation-bookmarks-add-compile-once-keybinding to-change)
+          )))))
 
 
 (defun compilation-bookmarks-delete-compilation-buffer ()
