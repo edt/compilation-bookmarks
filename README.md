@@ -9,7 +9,7 @@ Easily store the compile commands you use and retrieve them quickly.
 Add compilation-bookmarks to your load-path and add the following lines to your init.
 
 ```
-(require 'compilation-bookmarks-mode)
+(require 'compilation-bookmarks)
 (compilation-bookmarks-mode)
 ```
 

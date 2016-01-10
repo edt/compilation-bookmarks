@@ -330,4 +330,4 @@
       (setq compilation-bookmarks nil)
       (remove-hook 'kill-emacs-hook 'compile-bookmarks-save-bookmarks))))
 
-(provide 'compilation-bookmarks-mode)
+(provide 'compilation-bookmarks)
