@@ -5,7 +5,7 @@
 ;; Author: Edgar Thier <info * edgarthier.net>
 ;; Version: 0.1
 ;; Keywords: tools, processes
-;; URL:
+;; URL: https://github.com/edt-devel/compilation-bookmarks
 ;; Compatibility: GNU Emacs 24.x
 ;;
 ;; This file is NOT part of GNU Emacs.
