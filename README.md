@@ -10,6 +10,7 @@ Add compilation-bookmarks to your load-path and add the following lines to your 
 
 ```
 (require 'compilation-bookmarks)
+(setq compilation-bookmarks-prefix-key (kbd "C-c c")) ;; suggestion for easy access
 (compilation-bookmarks-mode)
 ```
 
@@ -47,7 +48,9 @@ Done when compilation-bookmarks-mode is enabled.
 
 ### Key bindings
 
-Per default all bindings can be found under ```C-c c```.
+Per default the compilation-bookmarks keymap is not bound.
+
+If you use the suggested prefix all bindings can be found under ```C-c c```.
 
 To add a compilation-bookmark, type ```C-c c a```.
 To remove a compilation-bookmark, type ```C-c c r```.

@@ -51,10 +51,10 @@
 (defvar compilation-bookmarks-require-recompilation nil)
 
 
-(defcustom compilation-bookmarks-prefix-key (kbd "C-c c")
+(defcustom compilation-bookmarks-prefix-key nil
   "Compilation-Bookmarks keymap prefix"
   :group 'compilation-bookmarks
-  :type 'string)
+  :type 'key-sequence)
 
 
 (defvar compilation-bookmarks-command-compile-map
@@ -88,7 +88,8 @@
 
 (defvar compilation-bookmarks-map
   (let ((map (make-sparse-keymap)))
-    (define-key map compilation-bookmarks-prefix-key 'compilation-bookmarks-command-map)
+    (if (not (equal compilation-bookmarks-prefix-key nil))
+    (define-key map compilation-bookmarks-prefix-key 'compilation-bookmarks-command-map))
     map)
   "Keymap for compilation-bookmarks-minor-mode")
 
