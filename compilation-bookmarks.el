@@ -253,7 +253,7 @@
         (kill-buffer "*compilation*"))))
 
 
-(defun compilation-bookmarks-compilation-once (&optional name)
+(defun compilation-bookmarks-compile-once (&optional name)
   "Use the compilation bookmark just once"
   (interactive)
   (if (equal name nil)
