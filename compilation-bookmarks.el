@@ -81,6 +81,7 @@
     (define-key map "v" 'compilation-bookmarks-compile)
     (define-key map "i" 'compilation-bookmarks-compile-once)
     (define-key map "c" 'compilation-bookmarks-command-compile-map)
+    (define-key map "o" 'compilation-bookmarks-command-compile-once-map)
     map)
   "")
 
